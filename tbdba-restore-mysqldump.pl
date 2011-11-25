@@ -5,6 +5,10 @@
 # the terms of the GNU General Public License as published by the Free Software
 # Foundation; version 2 of the License.
 
+#  How faster it is:
+#    >date && gunzip -c backup.sql.gz|./tbdba-restore-mysqldump.pl -s monitor_general -t monitor_host_info && date
+#    Fri Nov 25 14:35:06 CST 2011
+#    Fri Nov 25 14:46:49 CST 2011
 #  The backup file of mysqldump is sometimes very huge, if you wanna restore one 
 #  or two table from the file, there is no easy way to do this. There some way we 
 #  try:
@@ -20,8 +24,6 @@
 #  To do:
 #   1. add a parameter to output the sql files of all tables.
 #      tbdba-restore-mysqldump.pl --all-tables -f backup.sql
-#  
-
 use strict;
 use File::stat;     # To get the file stat
 use Time::localtime;
