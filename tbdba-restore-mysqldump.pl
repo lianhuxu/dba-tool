@@ -23,9 +23,7 @@ use File::stat;     # To get the file stat
 use Time::localtime;
 use Socket;
 use Getopt::Long;
-###########################################
-# print usage
-###########################################
+
 sub print_usage () {
   my $text = <<EOF;
  NAME:
