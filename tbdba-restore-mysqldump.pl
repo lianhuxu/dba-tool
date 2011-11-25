@@ -5,6 +5,8 @@
 # the terms of the GNU General Public License as published by the Free Software
 # Foundation; version 2 of the License.
 
+#  About it :
+#    restore one single table from the file of mysqldump VERY QUICK!
 #  How faster it is:
 #    >date && gunzip -c backup.sql.gz|./tbdba-restore-mysqldump.pl -s monitor_general -t monitor_host_info && date
 #    Fri Nov 25 14:35:06 CST 2011
