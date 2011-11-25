@@ -5,19 +5,23 @@
 # the terms of the GNU General Public License as published by the Free Software
 # Foundation; version 2 of the License.
 
-#  About it :
-#    restore one single table from the file of mysqldump VERY QUICK!
 #  How faster it is:
-#    >date && gunzip -c backup.sql.gz|./tbdba-restore-mysqldump.pl -s monitor_general -t monitor_host_info && date
+#    $ls -lh backup.sql.gz 
+#     -rw-r--r-- 1 mysql dba 14G Nov 21 04:49 backup.sql.gz
+#    $date && gunzip -c backup.sql.gz|./tbdba-restore-mysqldump.pl -s monitor_general -t monitor_host_info && date
 #    Fri Nov 25 14:35:06 CST 2011
 #    Fri Nov 25 14:46:49 CST 2011
-#  The backup file of mysqldump is sometimes very huge, if you wanna restore one 
-#  or two table from the file, there is no easy way to do this. There some way we 
-#  try:
-#    1. split/csplit the file
-#    2. restore some tables.
-#  This script will get a tiny improvement, all you need do is :
-#    tbdba-restore-mysqldump.pl -t process,user -s monitor -f backup.sql
+#    (the unzip of backup.sql.gz is 88G)
+#  
+#  About it :
+#    restore one single table from the file of mysqldump VERY QUICK!
+#    The backup file of mysqldump is sometimes very huge, if you wanna restore one 
+#    or two table from the file, there is no easy way to do this. There some way we 
+#    try:
+#      1. split/csplit the file
+#      2. restore some tables.
+#    This script will get a tiny improvement, all you need do is :
+#      tbdba-restore-mysqldump.pl -t process,user -s monitor -f backup.sql
 #
 #  Feature:
 #    When all the table has been found and -s is specified, exit immediately.
