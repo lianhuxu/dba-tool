@@ -5,6 +5,19 @@
 # the terms of the GNU General Public License as published by the Free Software
 # Foundation; version 2 of the License.
 
+#  The backup file of mysqldump is sometimes very huge, if you wanna restore one 
+#  or two table from the file, there is no easy way to do this. There some way we 
+#  try:
+#    1. split/csplit the file
+#    2. restore some tables.
+#  This script will get a tiny improvement, all you need do is :
+#    tbdba-restore-mysqldump.pl -t process,user -s monitor -f backup.sql
+#  
+#  To do:
+#   1. add a parameter to output the sql files of all tables.
+#      tbdba-restore-mysqldump.pl --all-tables -f backup.sql
+  
+
 use strict;
 use File::stat;     # To get the file stat
 use Time::localtime;
