@@ -129,7 +129,7 @@ while(<$ifh>){
         $inTableFlag=1;
         if($inTableFlag == 1 && $inDBFlag == 1){
           $tabcount = $tabcount - 1;
-          open (TABFILE, ">>$outputdir"."$curdb."."$curtab"); 
+          open (TABFILE, ">>$outputdir"."$curdb."."$curtab".".sql"); 
         }
       };
     }
