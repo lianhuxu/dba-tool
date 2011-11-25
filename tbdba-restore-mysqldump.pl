@@ -37,6 +37,8 @@ sub print_usage () {
           tbdba-restore-mysqldump.pl -t process -s monitor -f backup.sql
        3. Get table "process","users" of database "monitor" from backup.sql
           tbdba-restore-mysqldump.pl -t process,user -s monitor -f backup.sql
+       4. Get the table sql file from a STDIN 
+          gunzip -c backup.sql.gz|tbdba-restore-mysqldump.pl -t process,user -s monitor
 
  FUNCTION:
     Restore some tables from the while mysqldump backup
@@ -91,8 +93,13 @@ if($db eq ""){
 my $curtab = "";
 my $curdb = "";
 open (TABFILE, ">>STDERR"); 
-open(SQLFILE,"<$file") or print "Can't open file $file";
-while (<SQLFILE>) {
+my $ifh;
+if($file eq ""){
+  $ifh = *STDIN;
+}else{
+  open $ifh,"<", $file or die $!;
+}
+while(<$ifh>){
   if ($_ =~ /^-- Current Database\: `(.*)`/){
     $curdb = $1;
     print "$_ \n" if $opt{d};
