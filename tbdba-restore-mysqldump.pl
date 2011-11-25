@@ -19,7 +19,8 @@
 #
 #  Feature:
 #    When all the table has been found and -s is specified, exit immediately.
-#    So it's quicker;
+#    So it's quicker; So if the table you wanna is at the header of the sql file,
+#    It will be very quick. That's why i use this a lot.
 #  
 #  To do:
 #   1. add a parameter to output the sql files of all tables.
@@ -119,7 +120,7 @@ while(<$ifh>){
       $inDBFlag=1  if $1 eq $db;
     }
   }elsif ($_ =~ /^-- Table structure for table `(.*)`/){
-    if($db ne ""  && $tacount == 0){exit 0;}
+    if($db ne ""  && $tabcount == 0){exit 0;}
     $curtab = $1;
     $inTableFlag = 0;
     close (TABFILE);
