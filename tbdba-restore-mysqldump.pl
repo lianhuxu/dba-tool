@@ -31,6 +31,13 @@
 #  To do:
 #   1. add a parameter to output the sql files of all tables.
 #      tbdba-restore-mysqldump.pl --all-tables -f backup.sql
+#   2. Add the header to all the dump file,something like this:
+#        /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+#        /*!40101 SET NAMES gbk */;
+#        /*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+#        /*!40103 SET TIME_ZONE='+00:00' */;
+#      
+
 use strict;
 use File::stat;     # To get the file stat
 use Time::localtime;
