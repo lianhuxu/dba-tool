@@ -12,11 +12,15 @@
 #    2. restore some tables.
 #  This script will get a tiny improvement, all you need do is :
 #    tbdba-restore-mysqldump.pl -t process,user -s monitor -f backup.sql
+#
+#  Feature:
+#    When all the table has been found and -s is specified, exit immediately.
+#    So it's quicker;
 #  
 #  To do:
 #   1. add a parameter to output the sql files of all tables.
 #      tbdba-restore-mysqldump.pl --all-tables -f backup.sql
-  
+#  
 
 use strict;
 use File::stat;     # To get the file stat
@@ -82,6 +86,7 @@ my $inDBFlag = 0;
 my $outputdir = "./";
 push(@tabs, $opt{t}) if $opt{t};
 @tabs = split(/,/,join(',',@tabs));
+my $tabcount = scalar(@tabs);
 $db = $opt{s} if $opt{s};
 $file = $opt{f} if $opt{f};
 
@@ -104,10 +109,15 @@ while(<$ifh>){
     $curdb = $1;
     print "$_ \n" if $opt{d};
     if($db ne ""){
+      if($inDBFlag == 1){
+        # if $db ne "" and $inDBFlag == 1, A new database coming, now we quit
+        exit 0;
+      }
       $inDBFlag = 0;
       $inDBFlag=1  if $1 eq $db;
     }
   }elsif ($_ =~ /^-- Table structure for table `(.*)`/){
+    if($db ne ""  && $tacount == 0){exit 0;}
     $curtab = $1;
     $inTableFlag = 0;
     close (TABFILE);
@@ -115,6 +125,7 @@ while(<$ifh>){
       if($tabs[$i] eq $1) {
         $inTableFlag=1;
         if($inTableFlag == 1 && $inDBFlag == 1){
+          $tabcount = $tabcount - 1;
           open (TABFILE, ">>$outputdir"."$curdb."."$curtab"); 
         }
       };
