@@ -24,19 +24,30 @@
 #      tbdba-restore-mysqldump.pl -t process,user -s monitor -f backup.sql
 #
 #  Feature:
-#    When all the table has been found and -s is specified, exit immediately.
-#    So it's quicker; So if the table you wanna is at the header of the sql file,
-#    It will be very quick. That's why i use this a lot.
+#    1. When all the table has been found and -s is specified, exit immediately.
+#       So it's quicker; If the table you wanna is at the header of the sql file,
+#       It will be very quick. That's why i use this a lot.
+#    2. Every result sql file will hold the dump header, something like this:
+#         /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+#         /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+#         /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+#         /*!40101 SET NAMES utf8 */;
+#         /*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+#         /*!40103 SET TIME_ZONE='+00:00' */;
+#    3. With -a(--all-tables),you can get all the sql file. So this script also can 
+#       split the dump file(It will be very useful for parallel restore).
 #  
-#  To do:
-#   1. add a parameter to output the sql files of all tables.
-#      tbdba-restore-mysqldump.pl --all-tables -f backup.sql
-#   2. Add the header to all the dump file,something like this:
-#        /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-#        /*!40101 SET NAMES gbk */;
-#        /*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
-#        /*!40103 SET TIME_ZONE='+00:00' */;
-#      
+#  Tips:
+#    1. If you only wanna dump ONE table: with -s will be much quicker.
+#    2. At the end of every dump file, There will be a string like this:
+#         -- Table Finished
+#       This can be help you to tell whether job on this table finished(If 
+#       finished,maybe you can restore it).
+#
+#  To Do:
+#    1. Add parameter --target-dir to specify the target dir where dump file put
+#    2. With -d(--debug),script will output some infomation of processing
+#
 
 use strict;
 use File::stat;     # To get the file stat
@@ -59,6 +70,12 @@ sub print_usage () {
           tbdba-restore-mysqldump.pl -t process,user -s monitor -f backup.sql
        4. Get the table sql file from a STDIN 
           gunzip -c backup.sql.gz|tbdba-restore-mysqldump.pl -t process,user -s monitor
+       5. Get all the table sql files in schema 'monitor'
+          gunzip -c backup.sql.gz|tbdba-restore-mysqldump.pl -s monitor 
+       6. Get all the table sql files in the dump file 
+          gunzip -c backup.sql.gz|tbdba-restore-mysqldump.pl --all-tables
+       7. With -d, more infomation of processing will be output
+          date && gunzip -c /backdir/backup.sql.gz|tbdba-restore-mysqldump.pl -d -a && date
 
  FUNCTION:
     Restore some tables from the while mysqldump backup
@@ -68,12 +85,17 @@ sub print_usage () {
         which table you wanna recovery
     -s|schema=s
         in which schema the table your wanna recovery
+    -a|--all-tables
+        get all the sql file
+        With --schema, will get all the sql file just in the schema
+        Without --schema, will get all the sql file in the dump file
+        If this paramter is specified, -t will be ignore
     -f|sql-file=s
         from which mysqldump backup file 
     -d|--debug
         debug mode; more output will be there
     -h|--help
-        you already know
+        You already know
 EOF
  print STDERR $text;
  exit 0;
@@ -83,11 +105,12 @@ my %opt = (
 );
 
 GetOptions(\%opt,
-    's|database=s',           # write result to database
-    'f|sql-file=s',           # write result to database
-    't|table=s',                  # debug mode  
-    'd|debug+',                  # debug mode  
-    'h|help+',                  # debug mode  
+    's|database=s',          # write result to database
+    'f|sql-file=s',          # write result to database
+    't|table=s',             # debug mode  
+    'a|all-tables+',       # debug mode  
+    'd|debug+',              # debug mode  
+    'h|help+',               # debug mode  
     # order-by: 
     #   execs|Query_time:cnt
     #   ela_time|Query_time:sum 
@@ -103,6 +126,8 @@ my $outputdir = "./";
 push(@tabs, $opt{t}) if $opt{t};
 @tabs = split(/,/,join(',',@tabs));
 my $tabcount = scalar(@tabs);
+my $alltable = 0;
+$alltable = 1 if $opt{a};
 $db = $opt{s} if $opt{s};
 $file = $opt{f} if $opt{f};
 
@@ -111,8 +136,11 @@ if($db eq ""){
   $inDBFlag = 1;
 }
 
-my $curtab = "";
-my $curdb = "";
+my $curtab = "";        # is dealing with this table
+my $curdb = "";         # is dealing with this db
+my $curCreatedbSQL="";  # the sql of create current database
+my $headerFlag = 1;     # Whether is in the dump header
+my $dumpHeader = "";
 open (TABFILE, ">>STDERR"); 
 my $ifh;
 if($file eq ""){
@@ -122,8 +150,9 @@ if($file eq ""){
 }
 while(<$ifh>){
   if ($_ =~ /^-- Current Database\: `(.*)`/){
+    print "$_" if $opt{d};
+    $headerFlag = 0;
     $curdb = $1;
-    print "$_ \n" if $opt{d};
     if($db ne ""){
       if($inDBFlag == 1){
         # if $db ne "" and $inDBFlag == 1, A new database coming, now we quit
@@ -133,20 +162,41 @@ while(<$ifh>){
       $inDBFlag=1  if $1 eq $db;
     }
   }elsif ($_ =~ /^-- Table structure for table `(.*)`/){
-    if($db ne ""  && $tabcount == 0){exit 0;}
+    print "$_" if $opt{d};
+    $headerFlag = 0;
+    if($db ne ""  && $tabcount == 0 && $alltable ==0){exit 0;}
     $curtab = $1;
     $inTableFlag = 0;
+    print TABFILE "-- Table Finished";
     close (TABFILE);
-    for(my $i=0;$i <= scalar(@tabs);$i++){
-      if($tabs[$i] eq $1) {
-        $inTableFlag=1;
-        if($inTableFlag == 1 && $inDBFlag == 1){
-          $tabcount = $tabcount - 1;
-          open (TABFILE, ">>$outputdir"."$curdb."."$curtab".".sql"); 
+    if($alltable == 1){
+      $inTableFlag=1;
+    }else{
+      for(my $i=0;$i <= scalar(@tabs);$i++){
+        if($tabs[$i] eq $1) {
+          $inTableFlag=1;
+          if($inTableFlag == 1 && $inDBFlag == 1){
+            $tabcount = $tabcount - 1;
+          }
         }
-      };
+      }
     }
+    if($inTableFlag == 1){
+      open (TABFILE, ">>$outputdir"."$curdb."."$curtab".".sql");
+      print TABFILE "$dumpHeader";
+      print TABFILE "\n\n";
+      print TABFILE $curCreatedbSQL;
+      print TABFILE "\n\n";
+      print TABFILE "USE `$curdb`;\n\n";
+    }
+  }elsif($_ =~ /^CREATE DATABASE.*;$/){
+    print "$_" if $opt{d};
+    $headerFlag = 0;
+    $curCreatedbSQL = $_;
+  }elsif($_ =~ /^USE .*;$/){
+    # do nothing;
   }else{
+    if($headerFlag == 1) {$dumpHeader .= $_};
     if($inTableFlag == 1 && $inDBFlag == 1) {print TABFILE $_;}
   }
 }
