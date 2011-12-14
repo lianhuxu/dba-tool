@@ -47,6 +47,7 @@
 #  To Do:
 #    1. Add parameter --target-dir to specify the target dir where dump file put
 #    2. With -d(--debug),script will output some infomation of processing
+#    3. Write the documentation with POD
 #
 
 use strict;
