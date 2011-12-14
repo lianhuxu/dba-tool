@@ -14,7 +14,7 @@
 #    (the unzip of backup.sql.gz is 88G)
 #  
 #  About it :
-#    restore one single table from the file of mysqldump VERY QUICK!
+#    Restore one single table from a Huge mysqldump file VERY QUICKLY!
 #    The backup file of mysqldump is sometimes very huge, if you wanna restore one 
 #    or two table from the file, there is no easy way to do this. There some way we 
 #    try:
