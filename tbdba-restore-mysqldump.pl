@@ -48,6 +48,8 @@
 #    1. Add parameter --target-dir to specify the target dir where dump file put
 #    2. With -d(--debug),script will output some infomation of processing
 #    3. Write the documentation with POD
+#    4. add a parameter -i|ignore-use to igone the 'use db', in case you wanna retore table to 
+#       another database.
 #
 
 use strict;
