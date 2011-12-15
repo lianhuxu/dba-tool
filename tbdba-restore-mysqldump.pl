@@ -185,7 +185,7 @@ while(<$ifh>){
       }
     }
     if($inTableFlag == 1){
-      open (TABFILE, ">>$outputdir"."$curdb."."$curtab".".sql");
+      open (TABFILE, ">>$outputdir"."split_$curdb."."$curtab".".sql");
       print TABFILE "$dumpHeader";
       print TABFILE "\n\n";
       print TABFILE $curCreatedbSQL;
