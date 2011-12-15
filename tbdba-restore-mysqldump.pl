@@ -95,6 +95,8 @@ sub print_usage () {
         If this paramter is specified, -t will be ignore
     -f|sql-file=s
         from which mysqldump backup file 
+    -i|--ignore-use
+        from which mysqldump backup file 
     -d|--debug
         debug mode; more output will be there
     -h|--help
@@ -111,6 +113,7 @@ GetOptions(\%opt,
     's|database=s',          # write result to database
     'f|sql-file=s',          # write result to database
     't|table=s',             # debug mode  
+    'i|ignore-use+',         # ignore use `..` 
     'a|all-tables+',       # debug mode  
     'd|debug+',              # debug mode  
     'h|help+',               # debug mode  
@@ -130,7 +133,9 @@ push(@tabs, $opt{t}) if $opt{t};
 @tabs = split(/,/,join(',',@tabs));
 my $tabcount = scalar(@tabs);
 my $alltable = 0;
+my $ignoreUse= 0;
 $alltable = 1 if $opt{a};
+$ignoreUse = 1 if $opt{i};
 $db = $opt{s} if $opt{s};
 $file = $opt{f} if $opt{f};
 
@@ -188,9 +193,11 @@ while(<$ifh>){
       open (TABFILE, ">>$outputdir"."split-$curdb"."-$curtab".".sql");
       print TABFILE "$dumpHeader";
       print TABFILE "\n\n";
-      print TABFILE $curCreatedbSQL;
-      print TABFILE "\n\n";
-      print TABFILE "USE `$curdb`;\n\n";
+      if( $ignoreUse != 1 ){
+        print TABFILE $curCreatedbSQL;
+      	print TABFILE "\n\n";
+        print TABFILE "USE `$curdb`;\n\n";
+      }
     }
   }elsif($_ =~ /^CREATE DATABASE.*;$/){
     print "$_" if $opt{d};
